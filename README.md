@@ -1,13 +1,23 @@
 # FMMS Simple
 
-Ek bohot simple Factory Material Management backend — sirf 6 cheezein:
+Ek bohot simple Factory Material Management backend:
 
 1. **Item** — Raw Material aur Product ki master list
 2. **Raw Material In** — Kacha maal factory mein aaya (stock IN)
-3. **Stock (Production)** — Raw material use karke product banaya (raw OUT + product IN)
-4. **Out Material** — Maal factory se bahar gaya (stock OUT)
-5. **Return Material** — Maal wapas aaya (stock IN)
-6. **Available Material** — Abhi kitna stock pada hai (report)
+3. **Scratch In** — Scrap/waste material stock mein wapas aaya (stock IN)
+4. **Stock (Production)** — Raw material use karke product banaya (raw OUT + product IN)
+5. **Out Material** — Maal factory se bahar gaya (stock OUT)
+6. **Return Material** — Maal wapas aaya (stock IN)
+7. **Available Material** — Abhi kitna stock pada hai (report)
+8. **Dashboard Summary** — Total Scratch In / Total Items In / Total Items Out / Available Stock
+
+### Dashboard Summary ki definition (assumption)
+- **Total Scratch In** = ab tak total kitna scratch/scrap material aaya
+- **Total Items In** = Raw Material In + Return Material + Scratch In ka total
+- **Total Items Out** = Out Material ka total
+- **Available Stock** = abhi factory mein total kitna stock pada hai (sabhi items ka current_stock jod ke)
+
+Agar in definitions mein koi change chahiye ho (jaise Production se bana product bhi "Items In" mein count ho), to bata dena — `app/routers/dashboard.py` mein 5 minute ka change hai.
 
 Auth, Warehouse, Supplier, Customer, PO, SO, BOM — sab hata diya gaya hai. Agar baad mein chahiye ho to alag se add kiya ja sakta hai.
 
@@ -34,9 +44,20 @@ real backend API se connect hota hai (fetch calls), koi build step nahi chahiye.
 - Sidebar mein "API Connected" (green dot) dikhna chahiye — agar red dot dikhe
   to matlab backend chalu nahi hai ya URL galat hai.
 
-Frontend mein ye pages hain: Available Material (dashboard), Item, Raw Material In,
+Frontend mein ye pages hain: Available Material (dashboard), Item, Raw Material In, Scratch In,
 Stock (Production), Out Material, Return Material -- har page ka apna form hai
 jo turant real database mein save/update karta hai.
+
+### Logo Change Karna
+
+Abhi ek **placeholder logo** (`assets/logo.png`) lagi hui hai. Apna client ka
+asli logo lagane ke liye:
+
+1. Apni logo image ka naam **`logo.png`** rakho (PNG format mein)
+2. Usse **`assets/`** folder ke andar copy karo — purani `logo.png` ko replace kar do
+3. Bas — `index.html` mein kuch change karne ki zaroorat nahi, path wahi rahega
+
+(Sidebar ka logo box 30x30px hai aur browser tab ka icon bhi isi file se aata hai — dono automatically update ho jaayenge.)
 
 ## API List
 
@@ -49,6 +70,9 @@ jo turant real database mein save/update karta hai.
 | Item | DELETE | `/items/{id}` |
 | Raw Material In | POST | `/raw-material-in/` |
 | Raw Material In | GET | `/raw-material-in/` |
+| Scratch In | POST | `/scratch-in/` |
+| Scratch In | GET | `/scratch-in/` |
+| Dashboard Summary | GET | `/dashboard-summary/` |
 | Stock (Production) | POST | `/production/` |
 | Stock (Production) | GET | `/production/` |
 | Out Material | POST | `/out-material/` |

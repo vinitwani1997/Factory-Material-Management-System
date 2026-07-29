@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FMMS Simple — Factory Material Management</title>
+<link rel="icon" type="image/png" href="assets/logo.png"/>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --navy: #0F172A;
+    --navy-800: #1E293B;
+    --navy-700: #334155;
+    --navy-600: #475569;
+    --slate: #64748B;
+    --slate-300: #CBD5E1;
+    --slate-200: #E2E8F0;
+    --slate-100: #F1F5F9;
+    --white: #FFFFFF;
+    --blue: #3B82F6;
+    --blue-dark: #2563EB;
+    --blue-light: #EFF6FF;
+    --emerald: #10B981;
+    --emerald-light: #ECFDF5;
+    --red: #EF4444;
+    --red-light: #FEF2F2;
+    --amber: #F59E0B;
+    --amber-light: #FFFBEB;
+    --sidebar-w: 230px;
+    --header-h: 56px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--slate-100); color: var(--navy); }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: var(--sidebar-w); background: var(--navy); display: flex;
+    flex-direction: column; flex-shrink: 0;
+  }
+  .sidebar-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--navy-700);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-logo-icon {
+    width: 30px; height: 30px; background: var(--blue); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+    overflow: hidden;
+  }
+  .sidebar-logo-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .sidebar-logo-text { font-size: 15px; font-weight: 700; color: var(--white); }
+  .sidebar-sub { font-size: 10.5px; color: var(--slate-300); margin-top: 1px; }
+
+  .nav-section { padding: 14px 0 6px; }
+  .nav-section-label {
+    padding: 0 20px 6px; font-size: 10px; font-weight: 600;
+    color: var(--navy-600); text-transform: uppercase; letter-spacing: 0.8px;
+  }
+  .nav-item {
+    padding: 9px 20px; font-size: 13.5px; color: var(--slate-300); cursor: pointer;
+    display: flex; align-items: center; gap: 10px; border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: var(--navy-800); color: var(--white); }
+  .nav-item.active { background: var(--navy-800); color: var(--white); border-left-color: var(--blue); }
+  .nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+
+  .sidebar-footer {
+    margin-top: auto; padding: 12px 20px; border-top: 1px solid var(--navy-700);
+  }
+  .api-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--slate-300); }
+  .api-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--slate); }
+  .api-dot.ok { background: var(--emerald); }
+  .api-dot.err { background: var(--red); }
+  .api-url-input {
+    margin-top: 8px; width: 100%; background: var(--navy-800); border: 1px solid var(--navy-700);
+    color: var(--slate-300); font-size: 11px; padding: 6px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── MAIN ── */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .header {
+    height: var(--header-h); background: var(--white); border-bottom: 1px solid var(--slate-200);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0;
+  }
+  .header-title { font-size: 16px; font-weight: 700; }
+  .header-sub { font-size: 12px; color: var(--slate); margin-top: 1px; }
+  .content { padding: 24px; flex: 1; overflow-y: auto; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── CARDS / STATS ── */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: var(--white); border: 1px solid var(--slate-200); border-radius: 10px; padding: 16px; }
+  .stat-label { font-size: 11px; color: var(--slate); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  .stat-value { font-size: 24px; font-weight: 700; margin-top: 6px; }
+  .stat-sub { font-size: 11.5px; color: var(--slate); margin-top: 2px; }
+
+  .panel { background: var(--white); border: 1px solid var(--slate-200); border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+  .panel-header {
+    padding: 14px 18px; border-bottom: 1px solid var(--slate-200); display: flex;
+    align-items: center; justify-content: space-between;
+  }
+  .panel-title { font-size: 14px; font-weight: 700; }
+  .panel-body { padding: 18px; }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; align-items: end; }
+  .field label { display: block; font-size: 11.5px; font-weight: 600; color: var(--navy-600); margin-bottom: 5px; }
+  .field select, .field input {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--slate-300); border-radius: 7px;
+    font-size: 13px; font-family: inherit; background: var(--white);
+  }
+  .field select:focus, .field input:focus { outline: none; border-color: var(--blue); }
+
+  .btn {
+    padding: 8px 16px; border-radius: 7px; border: none; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .btn-primary { background: var(--blue); color: var(--white); }
+  .btn-primary:hover { background: var(--blue-dark); }
+  .btn-secondary { background: var(--slate-100); color: var(--navy-700); border: 1px solid var(--slate-300); }
+  .btn-secondary:hover { background: var(--slate-200); }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--slate); padding: 10px 18px; border-bottom: 1px solid var(--slate-200); font-weight: 600;
+  }
+  td { padding: 11px 18px; font-size: 13px; border-bottom: 1px solid var(--slate-100); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--slate-100); }
+  .empty-row td { text-align: center; color: var(--slate); padding: 28px; font-style: italic; }
+
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-raw { background: var(--amber-light); color: #92400E; }
+  .badge-product { background: #F5F3FF; color: #6D28D9; }
+  .badge-in { background: var(--emerald-light); color: #047857; }
+  .badge-out { background: var(--red-light); color: #B91C1C; }
+
+  .mono { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+  .qty-plus { color: var(--emerald); font-weight: 700; }
+  .qty-minus { color: var(--red); font-weight: 700; }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; padding: 12px 18px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    opacity: 0; transform: translateY(10px); transition: all 0.25s; z-index: 999; max-width: 360px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: var(--emerald); }
+  .toast.error { background: var(--red); }
+
+  .filter-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .filter-row select, .filter-row input { padding: 7px 10px; border: 1px solid var(--slate-300); border-radius: 7px; font-size: 12.5px; font-family: inherit; }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--slate-300); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo-icon"><img src="assets/logo.png" alt="Logo"/></div>
+      <div>
+        <div class="sidebar-logo-text">॥ श्री नारायणी ॥</div>
+        <div class="sidebar-sub">ॲग्रो इंडस्ट्रीस</div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')"><span class="nav-icon">📊</span>Available Material</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Master</div>
+      <div class="nav-item" data-page="items" onclick="navigate('items')"><span class="nav-icon">📦</span>Item</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Stock Movement</div>
+      <div class="nav-item" data-page="raw_in" onclick="navigate('raw_in')"><span class="nav-icon">📥</span>Raw Material In</div>
+      <div class="nav-item" data-page="scratch" onclick="navigate('scratch')"><span class="nav-icon">♻️</span>Scratch In</div>
+      <div class="nav-item" data-page="production" onclick="navigate('production')"><span class="nav-icon">⚙️</span>Stock (Production)</div>
+      <div class="nav-item" data-page="out" onclick="navigate('out')"><span class="nav-icon">🚚</span>Out Material</div>
+      <div class="nav-item" data-page="return" onclick="navigate('return')"><span class="nav-icon">↩️</span>Return Material</div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="api-status"><span class="api-dot" id="apiDot"></span><span id="apiStatusText">Checking API…</span></div>
+      <input class="api-url-input" id="apiUrlInput" value="http://127.0.0.1:8000" onchange="setApiBase(this.value)"/>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="header">
+      <div>
+        <div class="header-title" id="pageTitle">Available Material</div>
+        <div class="header-sub" id="pageSub">Current stock of every item</div>
+      </div>
+      <button class="btn btn-secondary" onclick="refreshAll()">⟳ Refresh</button>
+    </div>
+
+    <div class="content">
+
+      <!-- ══════════ DASHBOARD / AVAILABLE MATERIAL ══════════ -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Total Scratch In</div>
+            <div class="stat-value" id="statScratchIn">0</div>
+            <div class="stat-sub">scrap/waste added</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Items In</div>
+            <div class="stat-value" id="statItemsIn">0</div>
+            <div class="stat-sub">raw + return + scratch</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Items Out</div>
+            <div class="stat-value" id="statItemsOut">0</div>
+            <div class="stat-sub">dispatched/sold</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Available Stock</div>
+            <div class="stat-value" id="statAvailableStock">0</div>
+            <div class="stat-sub">total units in factory</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Available Material</div>
+          </div>
+          <div class="panel-body" style="padding-bottom:0;">
+            <div class="filter-row">
+              <select id="dashFilterType" onchange="loadAvailableMaterial()">
+                <option value="">All Types</option>
+                <option value="raw_material">Raw Material</option>
+                <option value="product">Product</option>
+              </select>
+              <select id="dashFilterStock" onchange="loadAvailableMaterial()">
+                <option value="true">In Stock Only</option>
+                <option value="false">Include Zero Stock</option>
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Item</th><th>Type</th><th>Current Stock</th><th>Unit</th></tr></thead>
+            <tbody id="availableTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════ ITEMS ══════════ -->
+      <div class="page" id="page-items">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Add New Item</div></div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <div class="field">
+                <label>Item Name</label>
+                <input type="text" id="itemName" placeholder="e.g. Wood Plank"/>
+              </div>
+              <div class="field">
+                <label>Type</label>
+                <select id="itemType">
+                  <option value="raw_material">Raw Material</option>
+                  <option value="product">Product</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Unit</label>
+                <input type="text" id="itemUnit" placeholder="pcs / kg / litre" value="pcs"/>
+              </div>
+              <div class="field"><button class="btn btn-primary" onclick="createItem()">+ Add Item</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">All Items</div></div>
+          <table>
+            <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Unit</th><th>Current Stock</th><th></th></tr></thead>
+            <tbody id="itemsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════ RAW MATERIAL IN ══════════ -->
+      <div class="page" id="page-raw_in">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Raw Material In (Stock IN)</div></div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <div class="field">
+                <label>Raw Material Item</label>
+                <select id="rawInItem"></select>
+              </div>
+              <div class="field">
+                <label>Quantity</label>
+                <input type="number" id="rawInQty" placeholder="e.g. 500" step="any"/>
+              </div>
+              <div class="field">
+                <label>Remarks (optional)</label>
+                <input type="text" id="rawInRemarks" placeholder="e.g. From supplier"/>
+              </div>
+              <div class="field"><button class="btn btn-primary" onclick="createRawMaterialIn()">+ Add Stock</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Recent Raw Material In</div></div>
+          <table>
+            <thead><tr><th>Date</th><th>Item</th><th>Quantity</th><th>Remarks</th></tr></thead>
+            <tbody id="rawInTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════ SCRATCH IN ══════════ -->
+      <div class="page" id="page-scratch">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Scratch In (Scrap/Waste — Stock IN)</div></div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <div class="field">
+                <label>Item</label>
+                <select id="scratchItem"></select>
+              </div>
+              <div class="field">
+                <label>Quantity</label>
+                <input type="number" id="scratchQty" placeholder="e.g. 15" step="any"/>
+              </div>
+              <div class="field">
+                <label>Remarks (optional)</label>
+                <input type="text" id="scratchRemarks" placeholder="e.g. Leftover from cutting"/>
+              </div>
+              <div class="field"><button class="btn btn-primary" onclick="createScratchIn()">+ Add Scratch</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Recent Scratch In</div></div>
+          <table>
+            <thead><tr><th>Date</th><th>Item</th><th>Quantity</th><th>Remarks</th></tr></thead>
+            <tbody id="scratchTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════ PRODUCTION ══════════ -->
+      <div class="page" id="page-production">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Stock — Production (Raw ➜ Product)</div></div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <div class="field">
+                <label>Raw Material (consumed)</label>
+                <select id="prodRawItem"></select>
+              </div>
+              <div class="field">
+                <label>Qty Consumed</label>
+                <input type="number" id="prodRawQty" placeholder="e.g. 100" step="any"/>
+              </div>
+              <div class="field">
+                <label>Product (produced)</label>
+                <select id="prodProductItem"></select>
+              </div>
+              <div class="field">
+                <label>Qty Produced</label>
+                <input type="number" id="prodProductQty" placeholder="e.g. 20" step="any"/>
+              </div>
+              <div class="field">
+                <label>Remarks (optional)</label>
+                <input type="text" id="prodRemarks" placeholder="e.g. Batch 1"/>
+              </div>
+              <div class="field"><button class="btn btn-primary" onclick="createProduction()">⚙️ Run Production</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Recent Production Entries</div></div>
+          <table>
+            <thead><tr><th>Date</th><th>Item</th><th>Movement</th><th>Quantity</th></tr></thead>
+            <tbody id="productionTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════ OUT MATERIAL ══════════ -->
+      <div class="page" id="page-out">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Out Material (Stock OUT)</div></div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <div class="field">
+                <label>Item</label>
+                <select id="outItem"></select>
+              </div>
+              <div class="field">
+                <label>Quantity</label>
+                <input type="number" id="outQty" placeholder="e.g. 5" step="any"/>
+              </div>
+              <div class="field">
+                <label>Remarks (optional)</label>
+                <input type="text" id="outRemarks" placeholder="e.g. Sold to customer"/>
+              </div>
+              <div class="field"><button class="btn btn-primary" onclick="createOutMaterial()">− Remove Stock</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Recent Out Material</div></div>
+          <table>
+            <thead><tr><th>Date</th><th>Item</th><th>Quantity</th><th>Remarks</th></tr></thead>
+            <tbody id="outTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════ RETURN MATERIAL ══════════ -->
+      <div class="page" id="page-return">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Return Material (Stock IN)</div></div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <div class="field">
+                <label>Item</label>
+                <select id="returnItem"></select>
+              </div>
+              <div class="field">
+                <label>Quantity</label>
+                <input type="number" id="returnQty" placeholder="e.g. 2" step="any"/>
+              </div>
+              <div class="field">
+                <label>Remarks (optional)</label>
+                <input type="text" id="returnRemarks" placeholder="e.g. Customer return"/>
+              </div>
+              <div class="field"><button class="btn btn-primary" onclick="createReturnMaterial()">+ Add Return</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Recent Return Material</div></div>
+          <table>
+            <thead><tr><th>Date</th><th>Item</th><th>Quantity</th><th>Remarks</th></tr></thead>
+            <tbody id="returnTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let API_BASE = localStorage.getItem('fmms_api_base') || 'http://127.0.0.1:8000';
+document.getElementById('apiUrlInput').value = API_BASE;
+
+let allItems = [];
+
+const PAGE_META = {
+  dashboard: ['Available Material', 'Current stock of every item'],
+  items: ['Item Master', 'Raw Material & Product master list'],
+  raw_in: ['Raw Material In', 'Record material coming into the factory'],
+  scratch: ['Scratch In', 'Record scrap/waste material added back to stock'],
+  production: ['Stock — Production', 'Consume raw material, produce finished goods'],
+  out: ['Out Material', 'Record material going out of the factory'],
+  return: ['Return Material', 'Record material returned back into stock'],
+};
+
+function setApiBase(val) {
+  API_BASE = val.replace(/\/$/, '');
+  localStorage.setItem('fmms_api_base', API_BASE);
+  refreshAll();
+}
+
+function showToast(message, type) {
+  const t = document.getElementById('toast');
+  t.textContent = message;
+  t.className = 'toast show ' + (type || 'success');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+async function apiCall(path, options) {
+  const res = await fetch(API_BASE + path, Object.assign({
+    headers: { 'Content-Type': 'application/json' }
+  }, options || {}));
+  let data = null;
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) {
+    const detail = (data && data.detail) ? data.detail : ('Request failed (' + res.status + ')');
+    throw new Error(detail);
+  }
+  return data;
+}
+
+function navigate(page) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('pageTitle').textContent = PAGE_META[page][0];
+  document.getElementById('pageSub').textContent = PAGE_META[page][1];
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) +
+         ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function typeBadge(type) {
+  return type === 'raw_material'
+    ? '<span class="badge badge-raw">Raw Material</span>'
+    : '<span class="badge badge-product">Product</span>';
+}
+
+/* ───────── API HEALTH CHECK ───────── */
+async function checkApiHealth() {
+  const dot = document.getElementById('apiDot');
+  const text = document.getElementById('apiStatusText');
+  try {
+    await apiCall('/');
+    dot.className = 'api-dot ok';
+    text.textContent = 'API Connected';
+  } catch (e) {
+    dot.className = 'api-dot err';
+    text.textContent = 'API Not Reachable';
+  }
+}
+
+/* ───────── ITEMS ───────── */
+async function loadItems() {
+  allItems = await apiCall('/items/');
+
+  // Item master table
+  const tbody = document.getElementById('itemsTableBody');
+  if (allItems.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No items yet — add your first item above.</td></tr>';
+  } else {
+    tbody.innerHTML = allItems.map(i => `
+      <tr>
+        <td class="mono">#${i.id}</td>
+        <td><strong>${i.name}</strong></td>
+        <td>${typeBadge(i.item_type)}</td>
+        <td>${i.unit}</td>
+        <td class="mono">${i.current_stock}</td>
+        <td><button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="deleteItem(${i.id})">Delete</button></td>
+      </tr>
+    `).join('');
+  }
+
+  // Populate dropdowns
+  const rawItems = allItems.filter(i => i.item_type === 'raw_material');
+  const productItems = allItems.filter(i => i.item_type === 'product');
+
+  fillSelect('rawInItem', rawItems);
+  fillSelect('prodRawItem', rawItems);
+  fillSelect('prodProductItem', productItems);
+  fillSelect('outItem', allItems);
+  fillSelect('returnItem', allItems);
+  fillSelect('scratchItem', allItems);
+}
+
+function fillSelect(id, items) {
+  const el = document.getElementById(id);
+  const prev = el.value;
+  if (items.length === 0) {
+    el.innerHTML = '<option value="">No items available</option>';
+    return;
+  }
+  el.innerHTML = items.map(i => `<option value="${i.id}">${i.name} (stock: ${i.current_stock} ${i.unit})</option>`).join('');
+  if (prev && items.some(i => String(i.id) === prev)) el.value = prev;
+}
+
+async function createItem() {
+  const name = document.getElementById('itemName').value.trim();
+  const item_type = document.getElementById('itemType').value;
+  const unit = document.getElementById('itemUnit').value.trim() || 'pcs';
+  if (!name) return showToast('Please enter an item name', 'error');
+
+  try {
+    await apiCall('/items/', { method: 'POST', body: JSON.stringify({ name, item_type, unit }) });
+    document.getElementById('itemName').value = '';
+    showToast(`Item "${name}" added successfully`, 'success');
+    await refreshAll();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function deleteItem(id) {
+  if (!confirm('Delete this item? This cannot be undone.')) return;
+  try {
+    await apiCall(`/items/${id}`, { method: 'DELETE' });
+    showToast('Item deleted', 'success');
+    await refreshAll();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+/* ───────── AVAILABLE MATERIAL ───────── */
+async function loadAvailableMaterial() {
+  const type = document.getElementById('dashFilterType').value;
+  const onlyInStock = document.getElementById('dashFilterStock').value;
+  let query = `?only_in_stock=${onlyInStock}`;
+  if (type) query += `&item_type=${type}`;
+
+  const data = await apiCall('/available-material/' + query);
+  const tbody = document.getElementById('availableTableBody');
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No stock to show.</td></tr>';
+  } else {
+    tbody.innerHTML = data.map(i => `
+      <tr>
+        <td><strong>${i.name}</strong></td>
+        <td>${typeBadge(i.item_type)}</td>
+        <td class="mono">${i.current_stock}</td>
+        <td>${i.unit}</td>
+      </tr>
+    `).join('');
+  }
+
+  // Stats
+  document.getElementById('statTotalItems').textContent = allItems.length;
+  document.getElementById('statRaw').textContent = allItems.filter(i => i.item_type === 'raw_material' && i.current_stock > 0).length;
+  document.getElementById('statProduct').textContent = allItems.filter(i => i.item_type === 'product' && i.current_stock > 0).length;
+  document.getElementById('statZero').textContent = allItems.filter(i => i.current_stock === 0).length;
+}
+
+/* ───────── RAW MATERIAL IN ───────── */
+async function createRawMaterialIn() {
+  const item_id = parseInt(document.getElementById('rawInItem').value);
+  const quantity = parseFloat(document.getElementById('rawInQty').value);
+  const remarks = document.getElementById('rawInRemarks').value.trim() || null;
+  if (!item_id) return showToast('Add a raw material item first', 'error');
+  if (!quantity || quantity <= 0) return showToast('Enter a valid quantity', 'error');
+
+  try {
+    await apiCall('/raw-material-in/', { method: 'POST', body: JSON.stringify({ item_id, quantity, remarks }) });
+    document.getElementById('rawInQty').value = '';
+    document.getElementById('rawInRemarks').value = '';
+    showToast('Raw material stock added', 'success');
+    await refreshAll();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function loadRawIn() {
+  const data = await apiCall('/raw-material-in/');
+  const tbody = document.getElementById('rawInTableBody');
+  renderTxnTable(tbody, data, 4);
+}
+
+/* ───────── PRODUCTION ───────── */
+async function createProduction() {
+  const raw_item_id = parseInt(document.getElementById('prodRawItem').value);
+  const raw_qty_consumed = parseFloat(document.getElementById('prodRawQty').value);
+  const product_item_id = parseInt(document.getElementById('prodProductItem').value);
+  const product_qty_produced = parseFloat(document.getElementById('prodProductQty').value);
+  const remarks = document.getElementById('prodRemarks').value.trim() || null;
+
+  if (!raw_item_id || !product_item_id) return showToast('Add raw material and product items first', 'error');
+  if (!raw_qty_consumed || raw_qty_consumed <= 0) return showToast('Enter valid raw quantity', 'error');
+  if (!product_qty_produced || product_qty_produced <= 0) return showToast('Enter valid product quantity', 'error');
+
+  try {
+    const result = await apiCall('/production/', {
+      method: 'POST',
+      body: JSON.stringify({ raw_item_id, raw_qty_consumed, product_item_id, product_qty_produced, remarks })
+    });
+    document.getElementById('prodRawQty').value = '';
+    document.getElementById('prodProductQty').value = '';
+    document.getElementById('prodRemarks').value = '';
+    showToast(`Produced ${result.product_produced.quantity} ${result.product_produced.item}`, 'success');
+    await refreshAll();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function loadProduction() {
+  const data = await apiCall('/production/');
+  const tbody = document.getElementById('productionTableBody');
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No production entries yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(t => {
+    const item = allItems.find(i => i.id === t.item_id);
+    const isConsume = t.txn_type === 'PRODUCTION_CONSUME';
+    return `
+      <tr>
+        <td>${fmtDate(t.txn_date)}</td>
+        <td><strong>${item ? item.name : ('#' + t.item_id)}</strong></td>
+        <td>${isConsume ? '<span class="badge badge-out">Consumed</span>' : '<span class="badge badge-in">Produced</span>'}</td>
+        <td class="mono ${isConsume ? 'qty-minus' : 'qty-plus'}">${isConsume ? '−' : '+'}${t.quantity}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/* ───────── OUT MATERIAL ───────── */
+async function createOutMaterial() {
+  const item_id = parseInt(document.getElementById('outItem').value);
+  const quantity = parseFloat(document.getElementById('outQty').value);
+  const remarks = document.getElementById('outRemarks').value.trim() || null;
+  if (!item_id) return showToast('Add an item first', 'error');
+  if (!quantity || quantity <= 0) return showToast('Enter a valid quantity', 'error');
+
+  try {
+    await apiCall('/out-material/', { method: 'POST', body: JSON.stringify({ item_id, quantity, remarks }) });
+    document.getElementById('outQty').value = '';
+    document.getElementById('outRemarks').value = '';
+    showToast('Out material recorded', 'success');
+    await refreshAll();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function loadOut() {
+  const data = await apiCall('/out-material/');
+  renderTxnTable(document.getElementById('outTableBody'), data, 4);
+}
+
+/* ───────── RETURN MATERIAL ───────── */
+async function createReturnMaterial() {
+  const item_id = parseInt(document.getElementById('returnItem').value);
+  const quantity = parseFloat(document.getElementById('returnQty').value);
+  const remarks = document.getElementById('returnRemarks').value.trim() || null;
+  if (!item_id) return showToast('Add an item first', 'error');
+  if (!quantity || quantity <= 0) return showToast('Enter a valid quantity', 'error');
+
+  try {
+    await apiCall('/return-material/', { method: 'POST', body: JSON.stringify({ item_id, quantity, remarks }) });
+    document.getElementById('returnQty').value = '';
+    document.getElementById('returnRemarks').value = '';
+    showToast('Return material recorded', 'success');
+    await refreshAll();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function loadReturn() {
+  const data = await apiCall('/return-material/');
+  renderTxnTable(document.getElementById('returnTableBody'), data, 4);
+}
+
+/* ───────── SCRATCH IN ───────── */
+async function createScratchIn() {
+  const item_id = parseInt(document.getElementById('scratchItem').value);
+  const quantity = parseFloat(document.getElementById('scratchQty').value);
+  const remarks = document.getElementById('scratchRemarks').value.trim() || null;
+  if (!item_id) return showToast('Add an item first', 'error');
+  if (!quantity || quantity <= 0) return showToast('Enter a valid quantity', 'error');
+
+  try {
+    await apiCall('/scratch-in/', { method: 'POST', body: JSON.stringify({ item_id, quantity, remarks }) });
+    document.getElementById('scratchQty').value = '';
+    document.getElementById('scratchRemarks').value = '';
+    showToast('Scratch material added', 'success');
+    await refreshAll();
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function loadScratchIn() {
+  const data = await apiCall('/scratch-in/');
+  renderTxnTable(document.getElementById('scratchTableBody'), data, 4);
+}
+
+/* ───────── DASHBOARD SUMMARY ───────── */
+async function loadDashboardSummary() {
+  const data = await apiCall('/dashboard-summary/');
+  document.getElementById('statScratchIn').textContent = data.total_scratch_in;
+  document.getElementById('statItemsIn').textContent = data.total_items_in;
+  document.getElementById('statItemsOut').textContent = data.total_items_out;
+  document.getElementById('statAvailableStock').textContent = data.available_stock;
+}
+
+/* ───────── SHARED TABLE RENDERER (for simple in/out transaction lists) ───────── */
+function renderTxnTable(tbody, data, colspan) {
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="${colspan}">No entries yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(t => {
+    const item = allItems.find(i => i.id === t.item_id);
+    const isIncrease = (t.txn_type === 'RAW_MATERIAL_IN' || t.txn_type === 'RETURN_MATERIAL' || t.txn_type === 'SCRATCH_IN');
+    return `
+      <tr>
+        <td>${fmtDate(t.txn_date)}</td>
+        <td><strong>${item ? item.name : ('#' + t.item_id)}</strong></td>
+        <td class="mono ${isIncrease ? 'qty-plus' : 'qty-minus'}">${isIncrease ? '+' : '−'}${t.quantity}</td>
+        <td>${t.remarks || '—'}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/* ───────── REFRESH ALL ───────── */
+async function refreshAll() {
+  await checkApiHealth();
+  try {
+    await loadItems();
+    await Promise.all([
+      loadAvailableMaterial(),
+      loadDashboardSummary(),
+      loadRawIn(),
+      loadScratchIn(),
+      loadProduction(),
+      loadOut(),
+      loadReturn(),
+    ]);
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+refreshAll();
+</script>
+</body>
+</html>

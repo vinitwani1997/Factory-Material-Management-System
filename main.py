@@ -16,6 +16,8 @@ from app.routers import (
     out_material,
     return_material,
     available_material,
+    scratch_in,
+    dashboard,
 )
 
 # Sare tables (agar already nahi bane) create kar deta hai
@@ -46,6 +48,8 @@ app.include_router(production.router)
 app.include_router(out_material.router)
 app.include_router(return_material.router)
 app.include_router(available_material.router)
+app.include_router(scratch_in.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/")
