@@ -13,6 +13,7 @@ INCREASING_TYPES = {
     TransactionType.RAW_MATERIAL_IN,
     TransactionType.PRODUCTION_ADD,
     TransactionType.RETURN_MATERIAL,
+    TransactionType.SCRATCH_IN,
 }
 DECREASING_TYPES = {
     TransactionType.PRODUCTION_CONSUME,

@@ -32,6 +32,7 @@ class TransactionType(str, enum.Enum):
     PRODUCTION_ADD = "PRODUCTION_ADD"     # Production se product bana           (+ stock)
     OUT_MATERIAL = "OUT_MATERIAL"         # Maal bahar gaya (sale/dispatch)      (- stock)
     RETURN_MATERIAL = "RETURN_MATERIAL"   # Maal wapas aaya                     (+ stock)
+    SCRATCH_IN = "SCRATCH_IN"             # Scrap/waste material stock mein aaya (+ stock)
 
 
 class Item(Base):

@@ -67,6 +67,23 @@ class ReturnMaterialCreate(BaseModel):
     remarks: Optional[str] = None
 
 
+# ---------------- SCRATCH IN ----------------
+
+class ScratchInCreate(BaseModel):
+    item_id: int
+    quantity: float = Field(gt=0, description="Kitna scratch/scrap material aaya")
+    remarks: Optional[str] = None
+
+
+# ---------------- DASHBOARD SUMMARY ----------------
+
+class DashboardSummaryOut(BaseModel):
+    total_scratch_in: float
+    total_items_in: float
+    total_items_out: float
+    available_stock: float
+
+
 # ---------------- TRANSACTION (history / list responses) ----------------
 
 class TransactionOut(BaseModel):
